@@ -11,34 +11,39 @@ DISTRICT = "sariyer"
 URL = f"https://api.collectapi.com/gasPrice/turkeyGasoline?city={CITY}&district={DISTRICT}"
 STATE_FILE = "state.json"
 
-def fetch_price():
+def fetch_prices():
     headers = {
         "authorization": f"apikey {API_KEY}",
         "content-type": "application/json"
     }
     response = requests.get(URL, headers=headers)
     data = response.json()
-    for item in data["result"]:
-        if item["marka"].lower() == "shell":
-            return float(item["benzin"])
-    return None
+    prices = {}
+    for item in data.get("result", []):
+        marka = item.get("marka")
+        benzin = item.get("benzin")
+        try:
+            fiyat = float(benzin)
+            prices[marka] = fiyat
+        except (TypeError, ValueError):
+            continue
+    return prices
 
-def load_last_price():
+def load_last_prices():
     if not os.path.exists(STATE_FILE):
-        return None
+        return {}
     try:
         with open(STATE_FILE, "r") as f:
             content = f.read().strip()
             if not content:
-                return None
-            return json.loads(content).get("last_price")
+                return {}
+            return json.loads(content)
     except (json.JSONDecodeError, FileNotFoundError):
-        return None
+        return {}
 
-
-def save_price(price):
+def save_prices(prices):
     with open(STATE_FILE, "w") as f:
-        json.dump({"last_price": price}, f)
+        json.dump(prices, f)
 
 def format_change(current, previous):
     if previous is None:
@@ -48,7 +53,7 @@ def format_change(current, previous):
     percent = (change / previous) * 100
     symbol = "🟢" if change > 0 else "🔴" if change < 0 else "🟡"
     color = "green" if change > 0 else "red" if change < 0 else "orange"
-    tag = f"<b><font color='{color}'>({percent:.2f}% değişim)</font></b>"
+    tag = f"<font color='{color}'>({percent:.2f}% değişim)</font>"
 
     important = ""
     if abs(percent) >= 5:
@@ -66,12 +71,22 @@ def send_telegram_message(text):
     requests.post(url, data=payload)
 
 def main():
-    current_price = fetch_price()
-    previous_price = load_last_price()
-    save_price(current_price)
+    current_prices = fetch_prices()
+    previous_prices = load_last_prices()
+    save_prices(current_prices)
 
-    change_text = format_change(current_price, previous_price)
-    message = f"⛽ Sarıyer Shell Benzin Fiyatı: <b>{current_price:.2f}₺</b>\n{change_text}"
+    if not current_prices:
+        send_telegram_message("⚠️ Sarıyer için geçerli benzin fiyatı bulunamadı.")
+        return
+
+    message_lines = ["⛽ <b>Sarıyer Benzin Fiyatları</b>"]
+    for marka, fiyat in current_prices.items():
+        previous = previous_prices.get(marka)
+        change_text = format_change(fiyat, previous)
+        line = f"<b>{marka}</b>: {fiyat:.2f}₺ {change_text}"
+        message_lines.append(line)
+
+    message = "\n".join(message_lines)
     send_telegram_message(message)
 
 if __name__ == "__main__":

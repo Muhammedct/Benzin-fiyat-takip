@@ -26,8 +26,15 @@ def fetch_price():
 def load_last_price():
     if not os.path.exists(STATE_FILE):
         return None
-    with open(STATE_FILE, "r") as f:
-        return json.load(f).get("last_price")
+    try:
+        with open(STATE_FILE, "r") as f:
+            content = f.read().strip()
+            if not content:
+                return None
+            return json.loads(content).get("last_price")
+    except (json.JSONDecodeError, FileNotFoundError):
+        return None
+
 
 def save_price(price):
     with open(STATE_FILE, "w") as f:

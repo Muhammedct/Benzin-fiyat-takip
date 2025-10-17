@@ -88,8 +88,8 @@ def main():
         change_text = format_change(fiyat, previous)
 
         deviation = abs(fiyat - avg) / avg * 100
-        if deviation > 30:
-            line = f"<b>{marka}</b>: {fiyat:.2f}₺ (veri hatalı(%30 dan fazla fark var!)) {change_text}"
+        if deviation > 10:
+            line = f"<b>{marka}</b>: {fiyat:.2f}₺ (veri hatalı olabilir orantısal fark var!)) {change_text}"
         else:
             line = f"<b>{marka}</b>: {fiyat:.2f}₺ {change_text}"
 

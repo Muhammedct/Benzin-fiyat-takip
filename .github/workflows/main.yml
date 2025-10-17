@@ -1,0 +1,29 @@
+name: Sarıyer Benzin Fiyat Takibi
+
+on:
+  schedule:
+    - cron: '0 * * * *'  # Her saat başı çalışır
+  workflow_dispatch:
+
+jobs:
+  fetch-and-notify:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Repo'yu klonla
+      uses: actions/checkout@v3
+
+    - name: Python kur
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Bağımlılıkları yükle
+      run: pip install -r requirements.txt
+
+    - name: Fiyatı kontrol et ve Telegram'a gönder
+      env:
+        COLLECTAPI_KEY: ${{ secrets.COLLECTAPI_KEY }}
+        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      run: python main.py

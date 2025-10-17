@@ -56,8 +56,8 @@ def format_change(current, previous):
     tag = f"<font color='{color}'>({percent:.2f}% değişim)</font>"
 
     important = ""
-    if abs(percent) >= 5:
-        important = "<b>‼️ ÖNEMLİ DEĞİŞİM ‼️</b>\n"
+    if abs(percent) >= 1:
+        important = "<b>‼️ ÖNEMLİ DEĞİŞİM (>%1) ‼️</b>\n"
 
     return f"{important}{symbol} {tag}"
 
@@ -79,20 +79,11 @@ def main():
         send_telegram_message("⚠️ Sarıyer için geçerli benzin fiyatı bulunamadı.")
         return
 
-    values = list(current_prices.values())
-    avg = sum(values) / len(values)
-
     message_lines = ["⛽ <b>Sarıyer Benzin Fiyatları</b>"]
     for marka, fiyat in current_prices.items():
         previous = previous_prices.get(marka)
         change_text = format_change(fiyat, previous)
-
-        deviation = abs(fiyat - avg) / avg * 100
-        if deviation > 10:
-            line = f"<b>{marka}</b>: {fiyat:.2f}₺ (veri hatalı olabilir orantısal fark var!)) {change_text}"
-        else:
-            line = f"<b>{marka}</b>: {fiyat:.2f}₺ {change_text}"
-
+        line = f"<b>{marka}</b>: {fiyat:.2f}₺ {change_text}"
         message_lines.append(line)
 
     message = "\n".join(message_lines)

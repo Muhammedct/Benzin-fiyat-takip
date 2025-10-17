@@ -79,11 +79,20 @@ def main():
         send_telegram_message("⚠️ Sarıyer için geçerli benzin fiyatı bulunamadı.")
         return
 
+    values = list(current_prices.values())
+    avg = sum(values) / len(values)
+
     message_lines = ["⛽ <b>Sarıyer Benzin Fiyatları</b>"]
     for marka, fiyat in current_prices.items():
         previous = previous_prices.get(marka)
         change_text = format_change(fiyat, previous)
-        line = f"<b>{marka}</b>: {fiyat:.2f}₺ {change_text}"
+
+        deviation = abs(fiyat - avg) / avg * 100
+        if deviation > 30:
+            line = f"<b>{marka}</b>: {fiyat:.2f}₺ (veri hatalı(%30 dan fazla fark var!)) {change_text}"
+        else:
+            line = f"<b>{marka}</b>: {fiyat:.2f}₺ {change_text}"
+
         message_lines.append(line)
 
     message = "\n".join(message_lines)
